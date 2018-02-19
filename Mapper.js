@@ -5,19 +5,7 @@ const fromJS = require('immutable').fromJS;
 class Mapper {
   constructor (scheme) {
     this.orignal = scheme;
-    this.scheme = this.analyzescheme(scheme);
-  }
-
-  get orignal() {
-    return this.orignal
-  }
-
-  get scheme() {
-    return this.scheme.toJS(),
-  }
-
-  get immutablescheme() {
-    return this.scheme;
+    this.scheme = this.analyzescheme(scheme)
   }
 
   /**
@@ -86,7 +74,7 @@ class Mapper {
         }
         return;
       }
-      object = object.setIn(p.model, data.getIn(p.values));
+      object = object.setIn(p.model, input.getIn(p.values));
 
     });
     return object;
