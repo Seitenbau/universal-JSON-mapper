@@ -1,0 +1,14 @@
+{
+  "name": "api-mapping-service",
+  "version": "1.0.0",
+  "description": "mapping apis from shema",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "lochmann",
+  "license": "MIT",
+  "dependencies": {
+    "immutable": "^3.8.2"
+  }
+}
