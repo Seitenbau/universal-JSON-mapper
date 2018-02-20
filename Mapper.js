@@ -1,11 +1,21 @@
 const Map = require('immutable').Map;
 const List = require('immutable').List;
 const fromJS = require('immutable').fromJS;
+const PathNotFound = require('./exceptions').PathNotFound;
 
 class Mapper {
   constructor (scheme) {
     this.orignal = scheme;
-    this.scheme = this.analyzescheme(scheme)
+    this.scheme = this.analyzescheme(scheme).toJS();
+    this.errors = [];
+  }
+
+  get error() {
+    return this.errors;
+  }
+
+  set error(error) {
+    this.errors.push(error)
   }
 
   /**
@@ -37,7 +47,13 @@ class Mapper {
   @return JSON the DataObject wich is genarated
   */
   map(input) {
-    return this._mapWithImmutable(fromJS(input), this.scheme.toJS()).toJS();
+    try {
+      this.validateMap(input);
+    } catch (e) {
+      this.error = e.toString()
+      console.error(e.toString());
+    }
+    return this._mapWithImmutable(fromJS(input), this.scheme).toJS();
   }
 
   /**
@@ -45,7 +61,7 @@ class Mapper {
   @param input immutable Map an immutable Map which will be mapped
   @param scheme immutable JSON the scheme, this is optional
   */
-  _mapWithImmutable(input, scheme = this.scheme.toJS()) {
+  _mapWithImmutable(input, scheme = this.scheme) {
     let object = Map();
     scheme.forEach(p => {
       if(p.type === 'ARRAY') {
@@ -66,7 +82,7 @@ class Mapper {
                         type: 'OBJECT'
                       }]);
 
-          if(Map.isMap(sub)) {
+          if(Map.isMap(sub) && sub.keySeq().get(0) === 0) {
             object = object.setIn([i].concat(p.model), sub.toList());
           } else {
             object = object.setIn([i].concat(p.model), sub);
@@ -78,6 +94,32 @@ class Mapper {
 
     });
     return object;
+  }
+
+  validateMap(data, scheme = this.scheme) {
+    scheme.forEach(p => {
+      if(typeof p.values[0] === 'string') {
+        this.validatePath(data, p.values, 1);
+      } else {
+        this.validateMap(data, p.values);
+      }
+    })
+  }
+
+  validatePath(data, paths, end) {
+    const map = fromJS(data);
+    const path = List(paths);
+    if(paths.length >= end) {
+      if(path.slice(0, end).last() === '[]') {
+        this.validatePath(map.getIn(path.slice(0, end - 1)),path.slice(end + 1), 1);
+        return;
+      }
+      if(map.hasIn(path.slice(0, end).toJS())) {
+        this.validatePath(data, paths, end + 1)
+      } else {
+        throw new PathNotFound(path.slice(0, end).toJS(), 'input data');
+      }
+    }
   }
 
 }
